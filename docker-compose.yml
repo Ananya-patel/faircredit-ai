@@ -1,0 +1,23 @@
+
+
+services:
+  faircredit-api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    restart: always
+
+  monitoring:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    command: streamlit run monitoring/dashboard.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    restart: always

@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS / Editor
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ML / data
+data/
+mlruns/
+
+# Docker
+*.log
