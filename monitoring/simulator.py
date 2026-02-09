@@ -20,7 +20,7 @@ API_BASE = os.getenv(
     "https://faircredit-ai.onrender.com"  # FastAPI service URL
 )
 
-API_ENDPOINT = f"{API_BASE}/simulate"
+API_ENDPOINT = f"{API_BASE}/predict"
 
 # -----------------------------
 # UI
@@ -28,11 +28,9 @@ API_ENDPOINT = f"{API_BASE}/simulate"
 st.title("💳 FairCredit – Credit Eligibility Simulator")
 st.caption("This demo uses behavioral signals only. No personal data is collected.")
 
-monthly_income = st.slider("Monthly Income", 0.0, 200000.0, 30000.0)
 savings_rate = st.slider("Savings Rate", 0.0, 1.0, 0.2)
 payment_regularity = st.slider("Payment Regularity", 0.0, 1.0, 0.8)
 transaction_consistency = st.slider("Transaction Consistency", 0.0, 1.0, 0.7)
-employment_stability = st.slider("Employment Stability (Years)", 0, 10, 3)
 network_diversity = st.slider("Network Diversity", 0.0, 1.0, 0.2)
 
 # -----------------------------
@@ -40,12 +38,11 @@ network_diversity = st.slider("Network Diversity", 0.0, 1.0, 0.2)
 # -----------------------------
 if st.button("🔍 Check Credit Eligibility"):
     payload = {
-        "monthly_income": monthly_income,
-        "savings_rate": savings_rate,
         "payment_regularity": payment_regularity,
-        "transaction_consistency": transaction_consistency,
-        "employment_stability": employment_stability,
-        "network_diversity": network_diversity,
+        "income_consistency": transaction_consistency,
+        "emergency_fund_ratio": savings_rate,
+        "network_creditworthiness": network_diversity,
+        "community_involvement": payment_regularity,
     }
 
     with st.spinner("Sending data to FairCredit API..."):
@@ -62,13 +59,17 @@ if st.button("🔍 Check Credit Eligibility"):
             else:
                 result = response.json()
 
-                st.success(f"Decision: **{result['decision']}**")
-                st.metric("Risk Score", result["risk_score"])
+                approved = result["approved"]
+                probability = result["probability"]
 
-                st.subheader("🔎 Explanation")
-                st.json(result["explanations"])
+                st.success(
+                    f"Decision: **{'Approved ✅' if approved else 'Declined ❌'}**"
+                )
+                st.metric("Approval Probability", round(probability, 3))
 
-                st.caption(result["fairness_note"])
+                st.caption(
+                    "⚖️ This decision was generated without using protected attributes."
+                )
 
         except Exception as e:
             st.error("Failed to connect to FairCredit API")
