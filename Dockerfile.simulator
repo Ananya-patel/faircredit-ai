@@ -1,5 +1,6 @@
 FROM python:3.10-slim
 
+
 WORKDIR /app
 
 # Copy dependencies
@@ -13,3 +14,6 @@ COPY monitoring monitoring
 EXPOSE 8501
 
 CMD ["streamlit", "run", "monitoring/simulator.py"]
+
+
+
