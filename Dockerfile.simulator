@@ -1,0 +1,15 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy dependencies
+COPY requirements.simulator.txt .
+RUN pip install --no-cache-dir -r requirements.simulator.txt
+
+
+# Copy simulator code
+COPY monitoring monitoring
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "monitoring/simulator.py"]

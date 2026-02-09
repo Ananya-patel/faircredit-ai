@@ -51,21 +51,42 @@ class CreditResponse(BaseModel):
     scoring_model: str
 
 
+class SimulatorRequest(BaseModel):
+    savings_rate: float = Field(..., ge=0, le=1)
+    payment_regularity: float = Field(..., ge=0, le=1)
+    transaction_consistency: float = Field(..., ge=0, le=1)
+    employment_stability: int = Field(..., ge=0, le=50)
+    network_diversity: float = Field(..., ge=0, le=1)
+
+
 # ---------------------------------------------------------------------
-# Model Registry (in-memory for now)
+# Helper: Simulator → Model feature adapter
+# ---------------------------------------------------------------------
+def simulator_to_model_features(sim_input: SimulatorRequest) -> Dict[str, float]:
+    """
+    Convert simulator behavioral inputs into model-ready features.
+    IMPORTANT: Must match trained model feature schema exactly.
+    """
+    return {
+        "payment_regularity": sim_input.payment_regularity,
+        "income_consistency": sim_input.transaction_consistency,
+        "emergency_fund_ratio": min(sim_input.savings_rate * 2, 1.0),
+        "network_creditworthiness": sim_input.network_diversity,
+        "community_involvement": sim_input.payment_regularity,
+    }
+
+
+# ---------------------------------------------------------------------
+# Model Registry (in-memory)
 # ---------------------------------------------------------------------
 baseline_model: FairnessConstrainedClassifier | None = None
 debiased_model: AdversarialDebiasingModel | None = None
 
 # ---------------------------------------------------------------------
-# Startup hook (NO SHAP HERE)
+# Startup hook
 # ---------------------------------------------------------------------
 @app.on_event("startup")
 def load_models() -> None:
-    """
-    Initialize models.
-    NOTE: Models are NOT trained here.
-    """
     global baseline_model, debiased_model
 
     logger.info("Initializing models for API")
@@ -89,52 +110,63 @@ def health() -> Dict[str, str]:
 # ---------------------------------------------------------------------
 @app.post("/predict", response_model=CreditResponse)
 def predict(request: CreditRequest) -> CreditResponse:
-    if baseline_model is None:
-        raise HTTPException(status_code=500, detail="Model not loaded")
-
-    if not hasattr(baseline_model.model, "coef_"):
-        raise HTTPException(
-            status_code=503,
-            detail="Model not trained yet",
-        )
+    if baseline_model is None or not hasattr(baseline_model.model, "coef_"):
+        raise HTTPException(status_code=503, detail="Model not trained")
 
     X = pd.DataFrame([request.dict()])
     prob = float(baseline_model.model.predict_proba(X)[0, 1])
-    approved = prob >= 0.5
 
     return CreditResponse(
-        approved=approved,
+        approved=prob >= 0.5,
         probability=prob,
         scoring_model="baseline_logistic",
     )
 
 
 # ---------------------------------------------------------------------
-# Prediction + Explainability (LAZY SHAP)
+# Prediction + Explainability
 # ---------------------------------------------------------------------
 @app.post("/predict_explain")
 def predict_with_explanation(request: CreditRequest) -> Dict:
-    if baseline_model is None:
-        raise HTTPException(status_code=500, detail="Model not loaded")
-
-    if not hasattr(baseline_model.model, "coef_"):
-        raise HTTPException(
-            status_code=503,
-            detail="Model not trained yet; explanations unavailable",
-        )
+    if baseline_model is None or not hasattr(baseline_model.model, "coef_"):
+        raise HTTPException(status_code=503, detail="Model not trained")
 
     X = pd.DataFrame([request.dict()])
     prob = float(baseline_model.model.predict_proba(X)[0, 1])
-    approved = prob >= 0.5
 
     explainer = ShapExplainer(baseline_model.model)
     explanation = explainer.explain(X)
 
     return {
-        "approved": approved,
+        "approved": prob >= 0.5,
         "probability": prob,
         "scoring_model": "baseline_logistic",
         "explanation": explanation,
+    }
+
+
+# ---------------------------------------------------------------------
+# Simulator Endpoint (PUBLIC DEMO)
+# ---------------------------------------------------------------------
+@app.post("/simulate")
+def simulate_credit(request: SimulatorRequest) -> Dict:
+    if baseline_model is None or not hasattr(baseline_model.model, "coef_"):
+        raise HTTPException(status_code=503, detail="Model not trained")
+
+    features = simulator_to_model_features(request)
+    X = pd.DataFrame([features])
+
+    prob = float(baseline_model.model.predict_proba(X)[0, 1])
+    decision = "Approved" if prob >= 0.5 else "Declined"
+
+    explainer = ShapExplainer(baseline_model.model)
+    explanation = explainer.explain(X)
+
+    return {
+        "decision": decision,
+        "risk_score": round(1 - prob, 3),
+        "explanations": explanation,
+        "fairness_note": "No protected attributes were used.",
     }
 
 
