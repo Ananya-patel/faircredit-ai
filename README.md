@@ -45,3 +45,5 @@ The service is containerized using Docker and deployed on Render.
 
 ```bash
 docker compose up --build
+## live link
+https://faircredit-ai-3.onrender.com/
