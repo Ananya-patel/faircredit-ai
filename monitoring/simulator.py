@@ -6,6 +6,9 @@ import requests
 st.set_page_config(page_title="FairCredit Simulator", layout="centered")
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_ENDPOINT = f"{API_BASE}/simulate"
+
+response = requests.post(API_ENDPOINT, json=data, timeout=10)
 
 st.title("💳 FairCredit – Credit Eligibility Simulator")
 st.caption("This demo uses behavioral signals only. No personal data is collected.")
