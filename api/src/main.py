@@ -6,6 +6,8 @@ fairness safeguards and explainability hooks.
 """
 
 from __future__ import annotations
+from fastapi.middleware.cors import CORSMiddleware
+
 
 import logging
 from datetime import datetime
@@ -33,6 +35,14 @@ app = FastAPI(
     description="Ethical alternative credit scoring system",
     version="1.0.0",
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow all for demo
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # ---------------------------------------------------------------------
 # Request / Response Schemas

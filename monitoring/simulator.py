@@ -14,11 +14,14 @@ st.caption("This demo uses behavioral signals only. No personal data is collecte
 # ----------------------------------
 # API configuration
 # ----------------------------------
-API_BASE = os.getenv(
+#API_BASE = os.getenv(
     "API_URL",
     "http://localhost:8000"  # local fallback
 )
-
+API_BASE = os.getenv(
+    "API_URL",
+    "https://faircredit-ai.onrender.com"
+)
 API_ENDPOINT = f"{API_BASE}/simulate"
 
 # ----------------------------------
