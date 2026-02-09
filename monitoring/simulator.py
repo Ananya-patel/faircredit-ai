@@ -2,14 +2,11 @@ import streamlit as st
 import requests
 import os
 
-import requests
+
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
-API_URL = API_URL = st.secrets.get(
-    "API_URL",
-    "https://faircredit-ai.onrender.com"
-)
+
 
 
 st.set_page_config(
